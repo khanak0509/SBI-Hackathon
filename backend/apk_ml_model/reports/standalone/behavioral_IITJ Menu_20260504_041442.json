@@ -1,0 +1,14 @@
+{
+  "package_name": "com.example.flutter_application_1",
+  "claims_to_be_sbi": false,
+  "is_sideloaded": false,
+  "ml_risk_prob": 0.025,
+  "isolation_forest_risk": 0.9618,
+  "heuristic_risk_score": 0.0,
+  "final_risk_score": 0.301,
+  "verdict": "SUSPICIOUS",
+  "analyst_review_needed": true,
+  "triggered_signals": [],
+  "zero_data_egress": true,
+  "timestamp": "2026-05-04T04:14:42.001907"
+}

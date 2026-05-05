@@ -1,0 +1,93 @@
+{
+  "timestamp": "2026-05-04T04:02:41.354093",
+  "roc_auc_test": 0.9991,
+  "cv_auc_mean": 0.9987,
+  "cv_auc_std": 0.0004,
+  "confusion_matrix": [
+    [
+      1884,
+      12
+    ],
+    [
+      28,
+      1084
+    ]
+  ],
+  "top_15_features": [
+    {
+      "name": "SEND_SMS",
+      "importance": 0.06633,
+      "type": ""
+    },
+    {
+      "name": "transact",
+      "importance": 0.06097,
+      "type": ""
+    },
+    {
+      "name": "attachInterface",
+      "importance": 0.04953,
+      "type": ""
+    },
+    {
+      "name": "READ_PHONE_STATE",
+      "importance": 0.04518,
+      "type": ""
+    },
+    {
+      "name": "android.telephony.SmsManager",
+      "importance": 0.03436,
+      "type": ""
+    },
+    {
+      "name": "ServiceConnection",
+      "importance": 0.03039,
+      "type": ""
+    },
+    {
+      "name": "onServiceConnected",
+      "importance": 0.02968,
+      "type": ""
+    },
+    {
+      "name": "android.os.Binder",
+      "importance": 0.02728,
+      "type": ""
+    },
+    {
+      "name": "bindService",
+      "importance": 0.0256,
+      "type": ""
+    },
+    {
+      "name": "TelephonyManager.getDeviceId",
+      "importance": 0.0254,
+      "type": ""
+    },
+    {
+      "name": "Ljava.net.URLDecoder",
+      "importance": 0.0249,
+      "type": ""
+    },
+    {
+      "name": "Ljava.lang.Class.getCanonicalName",
+      "importance": 0.02314,
+      "type": ""
+    },
+    {
+      "name": "INTERNET",
+      "importance": 0.02227,
+      "type": ""
+    },
+    {
+      "name": "RECEIVE_SMS",
+      "importance": 0.0179,
+      "type": ""
+    },
+    {
+      "name": "ClassLoader",
+      "importance": 0.01608,
+      "type": ""
+    }
+  ]
+}

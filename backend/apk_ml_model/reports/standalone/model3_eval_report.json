@@ -1,0 +1,59 @@
+{
+  "timestamp": "2026-05-04T04:13:04.750720",
+  "roc_auc_test": 0.9831,
+  "cv_auc_mean": 0.9811,
+  "cv_auc_std": 0.0022,
+  "isolation_forest_accuracy": 0.7427,
+  "confusion_matrix": [
+    [
+      1794,
+      102
+    ],
+    [
+      72,
+      1040
+    ]
+  ],
+  "top_10_behavioral_features": [
+    [
+      "permission_count",
+      0.21743
+    ],
+    [
+      "heuristic_risk_score",
+      0.09195
+    ],
+    [
+      "forbidden_perm_count",
+      0.08399
+    ],
+    [
+      "has_send_sms",
+      0.07651
+    ],
+    [
+      "accesses_device_id",
+      0.06941
+    ],
+    [
+      "has_get_accounts",
+      0.05605
+    ],
+    [
+      "dangerous_combo_count",
+      0.04153
+    ],
+    [
+      "uses_dynamic_loading",
+      0.0375
+    ],
+    [
+      "uses_telephony",
+      0.0366
+    ],
+    [
+      "uses_native_code",
+      0.03626
+    ]
+  ]
+}

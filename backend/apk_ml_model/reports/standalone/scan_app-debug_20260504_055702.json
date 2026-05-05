@@ -1,0 +1,20 @@
+{
+  "apk_path": "/Users/khanak/Desktop/sbi/fake_yono_lab/build/app/outputs/flutter-apk/app-debug.apk",
+  "package_name": "com.sbi.fake_yono_lab",
+  "cert_sha256": "043127CFA79E97B67C0AAFBC4BFEDFAFA5524919B5FDAF31D4E7B8EB3529B2B9",
+  "cert_verdict": "NON_SBI",
+  "ml_malware_prob": 0.902,
+  "cert_boost": 0.0,
+  "signal_risk_score": 0.4,
+  "final_risk_score": 1.0,
+  "verdict": "MALICIOUS",
+  "analyst_review_needed": false,
+  "signals": {
+    "dangerous_combo_score": 4,
+    "overlay_window_declared": false,
+    "accessibility_abuse": true,
+    "sms_interception": true,
+    "hardcoded_network_strings": 7
+  },
+  "timestamp": "2026-05-04T05:57:02.616201"
+}

@@ -1,0 +1,19 @@
+{
+  "package_name": "com.sbi.fake_yono_lab",
+  "claims_to_be_sbi": true,
+  "is_sideloaded": false,
+  "ml_risk_prob": 0.395,
+  "isolation_forest_risk": 1.0,
+  "heuristic_risk_score": 1.0,
+  "final_risk_score": 0.75,
+  "verdict": "CRITICAL",
+  "analyst_review_needed": false,
+  "triggered_signals": [
+    "YONO-forbidden permission(s): 5 detected",
+    "Permission fingerprint divergence: 0.86",
+    "Dangerous permission combo: 4 match(es)",
+    "Accessibility + SMS read/send = keylogger / OTP theft pattern"
+  ],
+  "zero_data_egress": true,
+  "timestamp": "2026-05-04T05:57:02.229262"
+}
