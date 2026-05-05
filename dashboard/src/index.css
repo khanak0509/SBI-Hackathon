@@ -1,0 +1,75 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@300;400;500;600;700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* ── Backgrounds ── */
+  --bg:       #f0f4f8;          /* Cool grey canvas — white cards pop against this */
+  --bg2:      #ffffff;
+  --bg3:      #e8edf3;          /* Deeper panel headers for hierarchy */
+  --s1:       rgba(10, 18, 40, 0.04);
+  --s2:       rgba(10, 18, 40, 0.08);
+  --b1:       rgba(10, 18, 40, 0.09);
+  --b2:       rgba(10, 18, 40, 0.16);
+
+  /* ── Text — Three focused tiers ── */
+  --t1:       #06111f;          /* Near-black ink — headlines, values */
+  --t2:       #1e3a5f;          /* Deep navy — body text, labels */
+  --t3:       #5a7a99;          /* Steel blue — hints, timestamps, meta */
+
+  /* ── Accent colours — more saturated for clarity ── */
+  --gold:     #b83d0a;          /* Deeper burnt orange — SBI brand */
+  --gold-d:   rgba(184, 61, 10, 0.09);
+  --gold-b:   rgba(184, 61, 10, 0.26);
+  --red:      #c81e1e;          /* Richer red — HIGH threat */
+  --red-d:    rgba(200, 30, 30, 0.09);
+  --red-b:    rgba(200, 30, 30, 0.26);
+  --green:    #047857;          /* Deep emerald — safe/connected */
+  --green-d:  rgba(4, 120, 87, 0.09);
+  --green-b:  rgba(4, 120, 87, 0.26);
+  --amber:    #b45309;          /* Rich amber — MEDIUM threat */
+  --amber-d:  rgba(180, 83, 9, 0.09);
+  --amber-b:  rgba(180, 83, 9, 0.26);
+  --blue:     #1d4ed8;          /* Strong blue — info/URL */
+  --blue-d:   rgba(29, 78, 216, 0.09);
+  --blue-b:   rgba(29, 78, 216, 0.26);
+
+  /* ── Layout ── */
+  --feed-w:   300px;
+  --bar-h:    56px;
+  --panel-w:  440px;
+  --bar-bg:   rgba(255, 255, 255, 0.97);
+  --code-bg:  #edf1f7;
+  --map-ocean: #dbeafe;
+  --map-land:  #e2e8f0;
+  --map-stroke: rgba(10, 18, 40, 0.14);
+  --map-hover: rgba(29, 78, 216, 0.12);
+  --map-grid:  rgba(10, 18, 40, 0.06);
+}
+
+html, body, #root { height: 100%; overflow: hidden; background: var(--bg); color: var(--t1); }
+body { font-family: 'Outfit', sans-serif; font-size: 14px; -webkit-font-smoothing: antialiased; letter-spacing: -0.01em; }
+
+.font-display { font-family: 'Bebas Neue', sans-serif; }
+.font-mono    { font-family: 'JetBrains Mono', monospace; }
+
+::-webkit-scrollbar { width: 3px; height: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--b1); border-radius: 2px; }
+
+@keyframes threat-ring {
+  0%   { transform: scale(1);   opacity: 0.85; }
+  100% { transform: scale(3.5); opacity: 0;   }
+}
+@keyframes slide-down {
+  from { transform: translateY(-12px); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.35; }
+}
+@keyframes scan {
+  0%   { transform: translateY(0); }
+  100% { transform: translateY(100vh); }
+}
