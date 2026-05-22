@@ -4,6 +4,17 @@ End-to-end stack for detecting **phishing URLs** and **fake banking / impersonat
 
 Designed to protect banking customers from link fraud and lookalike apps while giving operations a real-time India map view.
 
+## Architecture
+
+![KAVACH system architecture](docs/architecture.png)
+
+| Layer | Components |
+|-------|------------|
+| **Customer shield** | Notification watcher (SMS links), 24/7 background APK scanner, WhatsApp & Telegram bots |
+| **API hub** | FastAPI **Threat Router** — routes scans and live alerts |
+| **Intelligence core** | URL scanner (ML phishing), APK scanner (cert validation + static analysis) |
+| **Operations** | Live WebSocket dashboard & map, one-click report, automated takedown API |
+
 ---
 
 ## What’s in the repo
@@ -13,16 +24,6 @@ Designed to protect banking customers from link fraud and lookalike apps while g
 | **Backend API** | Python, FastAPI, Uvicorn | [`backend/`](backend/) | URL/APK scanning, threat store, WebSocket feed, report JSON |
 | **FraudOps Dashboard** | React 18, Vite, D3, Leaflet | [`dashboard/`](dashboard/) | Light-themed live map, threat feed, analyst detail panel |
 | **KAVACH Mobile App** | Flutter (Android) | [`kavach_app/`](kavach_app/) | Scan URL/APK, location-aware reports, CyberVani education |
-
-```mermaid
-flowchart LR
-  App["KAVACH Flutter App"] -->|"HTTP POST scan"| API["FastAPI port 8000"]
-  Dash["FraudOps Dashboard"] -->|"HTTP and WebSocket"| API
-  API --> URL["URL ML model"]
-  API --> APK["APK ML and cert checks"]
-  API --> Store[("In-memory threats")]
-  Store -->|"new_threat event"| Dash
-```
 
 ---
 
