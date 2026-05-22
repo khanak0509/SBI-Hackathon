@@ -16,12 +16,12 @@ Designed to protect banking customers from link fraud and lookalike apps while g
 
 ```mermaid
 flowchart LR
-  App[KAVACH Flutter App] -->|HTTP POST scan| API[FastAPI :8000]
-  Dash[FraudOps Dashboard] -->|HTTP + WebSocket| API
-  API --> URL[URL ML Model]
-  API --> APK[APK ML + cert checks]
-  API --> Store[(In-memory threats)]
-  Store -->|new_threat| Dash
+  App["KAVACH Flutter App"] -->|"HTTP POST scan"| API["FastAPI port 8000"]
+  Dash["FraudOps Dashboard"] -->|"HTTP and WebSocket"| API
+  API --> URL["URL ML model"]
+  API --> APK["APK ML and cert checks"]
+  API --> Store[("In-memory threats")]
+  Store -->|"new_threat event"| Dash
 ```
 
 ---
@@ -199,14 +199,3 @@ curl -X POST http://localhost:8000/scan/url \
 4. Watch the dashboard: feed updates, map zooms to the detection, city/state HUD appears.
 5. Click a threat → generate reports / mark reported (demo).
 
----
-
-## Disclaimer
-
-This project is a **proof-of-concept** for research and demos. It is not a production fraud platform. Do not rely on it alone for real-world decisions without security review, proper data handling, and institutional approval.
-
----
-
-## License
-
-Unless stated otherwise in this repository, code is provided for **hackathon and educational** use. Add your team’s license file if you need explicit terms.
