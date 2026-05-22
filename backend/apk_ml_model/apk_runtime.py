@@ -1,7 +1,4 @@
-"""
-APK static features + Drebin adapter + helpers for inference/tests.
-Keep extract_apk_features / Drebin mapping in sync with train_apk_model.ipynb.
-"""
+
 from __future__ import annotations
 
 import hashlib
@@ -38,7 +35,6 @@ OFFICIAL_SBI_CERT_SHA256 = (
     "a1b2c3d4e5f67890abcdef1234567890abcdef1234567890abcdef1234567890"
 )
 
-
 def levenshtein(s1: str, s2: str) -> int:
     m, n = len(s1), len(s2)
     dp = list(range(n + 1))
@@ -54,11 +50,9 @@ def levenshtein(s1: str, s2: str) -> int:
             prev = temp
     return dp[n]
 
-
 def pkg_similarity(pkg: str, ref: str = "com.sbi.lotusintouch") -> float:
     max_len = max(len(pkg), len(ref), 1)
     return round(1.0 - levenshtein(pkg.lower(), ref.lower()) / max_len, 4)
-
 
 def extract_apk_features(apk_path: str) -> dict[str, Any]:
     empty: dict[str, Any] = {k: 0 for k in APK_FEATURE_NAMES}
@@ -134,7 +128,6 @@ def extract_apk_features(apk_path: str) -> dict[str, Any]:
         "package_name": pkg,
     }
 
-
 def is_impersonating_sbi(
     features: dict[str, Any],
     official_cert_sha256: str = OFFICIAL_SBI_CERT_SHA256,
@@ -143,10 +136,8 @@ def is_impersonating_sbi(
     cert = features.get("cert_sha256", "") or ""
     return similarity > 0.55 and cert != official_cert_sha256
 
-
 def _cols_in_df(names: Sequence[str], drebin: pd.DataFrame) -> list[str]:
     return [c for c in names if c in drebin.columns]
-
 
 def build_apk_matrix_from_drebin(
     drebin_csv: str,
@@ -237,10 +228,8 @@ def build_apk_matrix_from_drebin(
     X = np.asarray([[r[k] for k in APK_FEATURE_NAMES] for r in rows], dtype=float)
     return X, y.values.astype(int)
 
-
 def feature_matrix_row(features: dict[str, Any]) -> np.ndarray:
     return np.array([[features.get(f, 0) for f in APK_FEATURE_NAMES]], dtype=float)
-
 
 def default_apk_model_paths(data_dir: str | None = None) -> tuple[str, str]:
     base = data_dir or os.path.join(os.path.dirname(__file__), "data")
@@ -248,7 +237,6 @@ def default_apk_model_paths(data_dir: str | None = None) -> tuple[str, str]:
         os.path.join(base, "apk_model.pkl"),
         os.path.join(base, "apk_feature_names.pkl"),
     )
-
 
 def load_apk_artifacts(
     model_path: str | None = None,
@@ -262,7 +250,6 @@ def load_apk_artifacts(
     model = joblib.load(mp)
     names: list[str] = list(joblib.load(fp))
     return model, names
-
 
 def malware_probability(
     features: dict[str, Any],

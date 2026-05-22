@@ -34,7 +34,7 @@ export default function App() {
 
   useEffect(() => {
     if (!latestNewThreat?.id) return
-    
+
     const triggerPulse = async () => {
       const t = { ...latestNewThreat }
       if (t.device_lat == null || t.device_lat === 0) {
@@ -56,7 +56,7 @@ export default function App() {
         setMapPulse((prev) => (prev?.id === t.id ? null : prev))
       }, 7000)
     }
-    
+
     triggerPulse()
   }, [latestNewThreat])
 
@@ -68,12 +68,11 @@ export default function App() {
     setSelectedThreat(null)
   }, [])
 
-  // DEDUPLICATION: Only show the latest threat for each unique app/URL
   const deduplicatedThreats = useMemo(() => {
     const map = new Map()
-    // Sort allThreats by date (newest first)
+
     const sorted = [...allThreats].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-    
+
     for (const t of sorted) {
       const key = t.threat_type === 'apk' ? (t.apk_package_name || t.raw_input) : t.raw_input
       if (!map.has(key)) {

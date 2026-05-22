@@ -11,7 +11,6 @@ export function latLngToXYZ(lat, lng, R = 1.5) {
 export const INDIA_CENTER_LNG = 78.9629
 export const INDIA_CENTER_LAT = 20.5937
 
-/** [lng, lat] centroid for fallback threat placement */
 export const STATE_CENTROIDS = {
   Maharashtra: [75.71, 19.75],
   Gujarat: [71.19, 22.26],
@@ -62,7 +61,7 @@ const geocodeCache = new Map()
 export async function geocodeLocation(city, state) {
   const query = `${city ? city + ',' : ''} ${state || ''}, India`.trim()
   if (geocodeCache.has(query)) return geocodeCache.get(query)
-  
+
   try {
     const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`)
     const data = await res.json()
@@ -74,7 +73,7 @@ export async function geocodeLocation(city, state) {
   } catch (err) {
     console.error('Geocoding failed', err)
   }
-  
+
   geocodeCache.set(query, null)
   return null
 }
@@ -87,17 +86,16 @@ export function threatLatLng(threat) {
   if (threat.device_lat != null && threat.device_lng != null) {
     let lat = Number(threat.device_lat)
     let lng = Number(threat.device_lng)
-    
-    // Ignore [0,0] which usually means GPS is off/loading on Android
+
     if (lat !== 0 || lng !== 0) {
-      // Safety check: if lat > 40 and lng < 40, they are likely swapped for India
+
       if (lat > 40 && lng < 40) {
         return [lng, lat]
       }
       return [lat, lng]
     }
   }
-  
+
   const cityOrDistrict = threat.device_city || threat.device_district
   if (cityOrDistrict) {
     const cityStr = String(cityOrDistrict).trim().toLowerCase()
@@ -109,7 +107,7 @@ export function threatLatLng(threat) {
       return [lat, lng]
     }
   }
-  
+
   if (threat.device_state) {
     const stateStr = String(threat.device_state).trim().toLowerCase()
     const stateKey = Object.keys(STATE_CENTROIDS).find(
@@ -120,6 +118,6 @@ export function threatLatLng(threat) {
       return [lat, lng]
     }
   }
-  
+
   return [INDIA_CENTER_LAT, INDIA_CENTER_LNG]
 }

@@ -65,7 +65,7 @@ class _ShellState extends State<_Shell> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      // Check if KavachPackageReceiver saved a threat while we were backgrounded
+
       context.read<KavachService>().checkPendingThreat();
     }
   }

@@ -1,7 +1,6 @@
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 
-/// Snapshot from GPS + reverse geocode for dashboard map / reports.
 class DeviceLocationSnapshot {
   DeviceLocationSnapshot({
     required this.lat,
@@ -27,7 +26,7 @@ class DeviceLocationSnapshot {
 }
 
 Future<DeviceLocationSnapshot?> captureDeviceLocation() async {
-  // MOCKED FOR DEMO
+
   return DeviceLocationSnapshot(
     lat: 18.7512,
     lng: 73.6455,

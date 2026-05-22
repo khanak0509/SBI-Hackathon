@@ -4,7 +4,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-
 class DeviceMeta(BaseModel):
     device_city: str | None = None
     device_state: str | None = None
@@ -12,23 +11,19 @@ class DeviceMeta(BaseModel):
     device_lat: float | None = None
     device_lng: float | None = None
 
-
 class UrlScanRequest(DeviceMeta):
     url: str = Field(..., min_length=3, max_length=4096)
     source_channel: str = "manual"
-
 
 class MarkReportedRequest(BaseModel):
     certin: bool = False
     google: bool = False
     cybercrime: bool = False
 
-
 class BackgroundThreatRequest(DeviceMeta):
     package_name: str
     similarity: float
     source_channel: str = "background"
-
 
 class ThreatOut(BaseModel):
     id: str
@@ -60,11 +55,9 @@ class ThreatOut(BaseModel):
     class Config:
         extra = "allow"
 
-
 class ThreatsListResponse(BaseModel):
     total: int
     items: list[dict[str, Any]]
-
 
 class StatsResponse(BaseModel):
     total_threats_24h: int

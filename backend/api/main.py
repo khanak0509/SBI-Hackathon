@@ -25,7 +25,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 def _threat_row_from_url(
     body: UrlScanRequest,
     verdict: str,
@@ -67,7 +66,6 @@ def _threat_row_from_url(
         "reported_google": False,
         "reported_cybercrime": False,
     }
-
 
 def _threat_row_from_apk(
     source_channel: str,
@@ -115,7 +113,6 @@ def _threat_row_from_apk(
         "reported_cybercrime": False,
     }
 
-
 @app.post("/scan/url")
 async def scan_url(body: UrlScanRequest) -> dict[str, Any]:
     settings = get_settings()
@@ -130,7 +127,6 @@ async def scan_url(body: UrlScanRequest) -> dict[str, Any]:
         "features": feats,
         "threat_id": saved["id"],
     }
-
 
 @app.post("/scan/apk")
 async def scan_apk(
@@ -199,7 +195,6 @@ async def scan_apk(
         except Exception:
             pass
 
-
 @app.post("/report/background_threat")
 async def report_background_threat(body: BackgroundThreatRequest) -> dict[str, Any]:
     row = {
@@ -224,17 +219,14 @@ async def report_background_threat(body: BackgroundThreatRequest) -> dict[str, A
     await manager.broadcast_json("new_threat", saved)
     return {"status": "ok", "threat_id": saved["id"]}
 
-
 @app.get("/threats")
 async def list_threats(limit: int = 50) -> dict[str, Any]:
     total, items = await store.list_items(limit=max(1, min(limit, 500)))
     return {"total": total, "items": items}
 
-
 @app.get("/threats/stats")
 async def threats_stats() -> dict[str, Any]:
     return await store.stats()
-
 
 @app.get("/threats/{threat_id}")
 async def get_threat(threat_id: str) -> dict[str, Any]:
@@ -243,14 +235,12 @@ async def get_threat(threat_id: str) -> dict[str, Any]:
         raise HTTPException(status_code=404, detail="Threat not found")
     return t
 
-
 @app.post("/reports/{threat_id}/all")
 async def reports_all(threat_id: str) -> dict[str, Any]:
     t = await store.get(threat_id)
     if not t:
         raise HTTPException(status_code=404, detail="Threat not found")
     return build_all_reports(t)
-
 
 @app.post("/threats/{threat_id}/mark_reported")
 async def mark_reported(threat_id: str, body: MarkReportedRequest) -> dict[str, Any]:
@@ -266,7 +256,6 @@ async def mark_reported(threat_id: str, body: MarkReportedRequest) -> dict[str, 
         raise HTTPException(status_code=404, detail="Threat not found")
     return updated
 
-
 @app.websocket("/ws/threats")
 async def ws_threats(websocket: WebSocket) -> None:
     await manager.connect(websocket)
@@ -275,7 +264,6 @@ async def ws_threats(websocket: WebSocket) -> None:
             await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(websocket)
-
 
 @app.get("/health")
 async def health() -> dict[str, str]:

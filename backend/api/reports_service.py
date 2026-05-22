@@ -3,13 +3,11 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-
 def _ist_now() -> str:
     from datetime import timedelta, timezone
 
     ist = timezone(timedelta(hours=5, minutes=30))
     return datetime.now(ist).strftime("%d %b %Y %H:%M:%S IST")
-
 
 def build_all_reports(threat: dict[str, Any]) -> dict[str, Any]:
     tid = threat.get("id", "")

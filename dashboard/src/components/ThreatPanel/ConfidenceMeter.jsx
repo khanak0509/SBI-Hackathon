@@ -4,7 +4,7 @@ export default function ConfidenceMeter({ confidence, verdict }) {
   const color = VERDICT.color[verdict] || 'var(--t3)'
   const displayVal = ((confidence || 0) * 100).toFixed(1)
   const barWidth = Math.min(100, Math.max(0, (confidence || 0) * 100))
-  
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>

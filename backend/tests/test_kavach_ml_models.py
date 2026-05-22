@@ -1,12 +1,4 @@
-"""
-Integration-style tests for saved URL and APK XGBoost models.
 
-Run from repo root:
-  cd SBI-Hackathon/backend && python -m pytest tests/test_kavach_ml_models.py -v
-
-Requires: joblib, numpy, pandas, scikit-learn, xgboost, tldextract
-Optional real APK: export KAVACH_TEST_APK=/path/to/file.apk
-"""
 from __future__ import annotations
 
 import os
@@ -21,7 +13,6 @@ BACKEND = Path(__file__).resolve().parents[1]
 URL_DATA = BACKEND / "url_ml_model" / "data"
 APK_DATA = BACKEND / "apk_ml_model" / "data"
 
-
 @pytest.fixture(scope="module")
 def url_bundle():
     pytest.importorskip("tldextract", reason="pip install tldextract (URL features)")
@@ -34,7 +25,6 @@ def url_bundle():
     model, names = url_runtime.load_url_artifacts(str(mp), str(fp))
     return url_runtime, model, names
 
-
 @pytest.fixture(scope="module")
 def apk_bundle():
     from apk_ml_model import apk_runtime
@@ -45,7 +35,6 @@ def apk_bundle():
         pytest.skip(f"Missing APK artifacts: {mp} or {fp}")
     model, names = apk_runtime.load_apk_artifacts(str(mp), str(fp))
     return apk_runtime, model, names
-
 
 class TestUrlModel:
     def test_artifact_contract(self, url_bundle):
@@ -63,14 +52,12 @@ class TestUrlModel:
         assert 0 <= float(p[1]) <= 1
 
     def test_trusted_sbi_domains_return_safe_score(self, url_bundle):
-        """Official allowlisted bank hosts must not be flagged (model can FP otherwise)."""
         url_runtime, model, names = url_bundle
         for u in ("https://www.onlinesbi.sbi/", "https://sbicard.com/"):
             assert url_runtime.is_trusted_bank_url(u)
             assert url_runtime.phishing_probability(u, model, names) == 0.0
 
     def test_curated_urls_rank_correctly(self, url_bundle):
-        """Phishing-style URLs should score higher than known-good retail/bank URLs."""
         url_runtime, model, names = url_bundle
         bad = [
             "http://sbi-kyc-update.xyz/login?id=1",
@@ -87,12 +74,11 @@ class TestUrlModel:
         assert np.mean(bad_probs) > np.mean(good_probs) + 0.05
 
     def test_sample_from_training_csv(self, url_bundle):
-        """Stratified rows from the same CSV family should separate on average."""
         csv_path = URL_DATA / "phishing_site_urls.csv"
         if not csv_path.is_file():
             pytest.skip("phishing_site_urls.csv not present")
         url_runtime, model, names = url_bundle
-        # First rows are often all phishing; stream chunks until both classes appear.
+
         parts: list[pd.DataFrame] = []
         for chunk in pd.read_csv(
             csv_path, usecols=["URL", "Label"], chunksize=50_000
@@ -123,7 +109,6 @@ class TestUrlModel:
         auc = roc_auc_score(df["y"].values, np.array(probs))
         assert auc >= 0.75, f"ROC-AUC on CSV sample too low: {auc:.3f}"
 
-
 class TestApkModel:
     def test_artifact_contract(self, apk_bundle):
         apk_runtime, model, names = apk_bundle
@@ -131,7 +116,6 @@ class TestApkModel:
         assert model.n_features_in_ == len(apk_runtime.APK_FEATURE_NAMES)
 
     def test_drebin_sample_separation(self, apk_bundle):
-        """Saved model should rank Drebin-derived malware rows above benign on average."""
         drebin_csv = APK_DATA / "drebin-215-dataset-5560malware-9476-benign.csv"
         cat_csv = APK_DATA / "dataset-features-categories.csv"
         if not drebin_csv.is_file() or not cat_csv.is_file():
@@ -140,7 +124,7 @@ class TestApkModel:
         X, y = apk_runtime.build_apk_matrix_from_drebin(
             str(drebin_csv), str(cat_csv)
         )
-        # Subset for speed; indices fixed for reproducibility
+
         idx = np.arange(0, len(y), max(1, len(y) // 3000))[:3000]
         Xs, ys = X[idx], y[idx]
         probs = model.predict_proba(Xs)[:, 1]
@@ -163,7 +147,7 @@ class TestApkModel:
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=0.2, stratify=y, random_state=42
         )
-        # Model was trained on same distribution; sanity-check it still discriminates
+
         y_prob = model.predict_proba(X_test)[:, 1]
         auc = roc_auc_score(y_test, y_prob)
         acc = accuracy_score(y_test, model.predict(X_test))
@@ -179,7 +163,6 @@ class TestApkModel:
         assert isinstance(feats.get("package_name", ""), str)
         prob = apk_runtime.malware_probability(feats, model, names)
         assert 0 <= prob <= 1
-
 
 class TestImpersonationRule:
     def test_rule_logic(self):

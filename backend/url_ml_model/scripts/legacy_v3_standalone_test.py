@@ -1,12 +1,3 @@
-"""
-KAVACH — URL Test Suite (v3 — No whitelist, honest ML)
-=======================================================
-45 URLs: 20 legitimate + 25 phishing
-The model itself must learn the difference. No shortcuts.
-
-Run from SBI-Hackathon/backend:
-  python url_ml_model/scripts/legacy_v3_standalone_test.py
-"""
 
 import importlib.util
 from pathlib import Path

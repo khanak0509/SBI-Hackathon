@@ -1,26 +1,3 @@
-"""
-╔══════════════════════════════════════════════════════════════════════╗
-║  KAVACH — ML Model 3: Runtime Behavioral Anomaly Engine             ║
-║  SBI FinNovation PSB Hackathon 2026 · IIT Jodhpur                   ║
-╠══════════════════════════════════════════════════════════════════════╣
-║  Dataset files (Kaggle: shashwatwork/android-malware-dataset):      ║
-║    data/data.csv               — 215 features + 'class' col (B/S)   ║
-║    data/feature_description.csv — feature name → type mapping       ║
-║  Approach : On-device heuristic scoring — ZERO data leaves device   ║
-║  Models   : RandomForest (supervised) + IsolationForest (zero-day)  ║
-║  Output   : SAFE / SUSPICIOUS / CRITICAL + triggered signals        ║
-╚══════════════════════════════════════════════════════════════════════╝
-
-Install:
-    pip install scikit-learn pandas numpy joblib androguard
-
-Paths resolve from apk_ml_model/. CSVs live under apk_ml_model/data/.
-
-Train / scan / self-test (from backend/):
-    python apk_ml_model/scripts/model3_behavioral_engine.py
-    python apk_ml_model/scripts/model3_behavioral_engine.py path/to/app.apk
-    python apk_ml_model/scripts/model3_behavioral_engine.py --self-test
-"""
 
 import json
 import sys
@@ -41,17 +18,17 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 
 try:
-    from androguard.core.apk import APK  # androguard >= 4
+    from androguard.core.apk import APK
 
     ANDROGUARD_AVAILABLE = True
 except ImportError:
     try:
-        from androguard.core.bytecodes.apk import APK  # androguard 3.x
+        from androguard.core.bytecodes.apk import APK
 
         ANDROGUARD_AVAILABLE = True
     except ImportError:
         ANDROGUARD_AVAILABLE = False
-        APK = None  # type: ignore[misc, assignment]
+        APK = None
 if not ANDROGUARD_AVAILABLE:
     print("[WARN] androguard not installed → live APK scan disabled (training still works)")
 else:
@@ -62,10 +39,6 @@ else:
         _loguru_logger.add(sys.stderr, level="WARNING")
     except Exception:
         pass
-
-# =============================================================================
-# 0.  PATHS  (apk_ml_model package root)
-# =============================================================================
 
 _PKG = Path(__file__).resolve().parent.parent
 
@@ -85,12 +58,6 @@ MODEL_PATH    = MODEL_DIR / "model3_behavioral_engine.pkl"
 ISO_PATH      = MODEL_DIR / "model3_isolation_forest.pkl"
 FEATURES_PATH = MODEL_DIR / "model3_feature_names.json"
 
-# =============================================================================
-# 1.  SBI YONO PERMISSION FINGERPRINT
-#     Known-good permissions for the genuine YONO SBI app.
-#     Any app claiming to be YONO is checked against this fingerprint.
-# =============================================================================
-
 YONO_KNOWN_GOOD_PERMISSIONS = {
     "android.permission.INTERNET",
     "android.permission.ACCESS_NETWORK_STATE",
@@ -103,8 +70,7 @@ YONO_KNOWN_GOOD_PERMISSIONS = {
     "android.permission.RECEIVE_BOOT_COMPLETED",
     "android.permission.FOREGROUND_SERVICE",
     "android.permission.POST_NOTIFICATIONS",
-    # Genuine YONO NEVER requests these — any YONO clone requesting them is CRITICAL:
-    # BIND_ACCESSIBILITY_SERVICE, READ_SMS, RECEIVE_SMS, SYSTEM_ALERT_WINDOW
+
 }
 
 YONO_FORBIDDEN_PERMISSIONS = {
@@ -139,16 +105,8 @@ OVERLAY_TYPES = [
     "TYPE_SYSTEM_ALERT",
 ]
 
-# =============================================================================
-# 2.  BEHAVIORAL FEATURE DATACLASS
-# =============================================================================
-
 @dataclass
 class BehavioralFeatures:
-    """
-    All checks are local — zero data egress.
-    In production: Kotlin bridge populates this from Android PackageManager.
-    """
     package_name:              str   = ""
     claims_to_be_sbi:          bool  = False
     is_sideloaded:             bool  = False
@@ -175,21 +133,14 @@ class BehavioralFeatures:
     target_sdk:                int   = 0
     heuristic_risk_score:      float = 0.0
 
-
 def compute_fingerprint_divergence(app_perms: set, reference: set) -> float:
-    """Jaccard distance: 0.0 = identical, 1.0 = completely different."""
     union = app_perms | reference
     if not union:
         return 0.0
     intersection = app_perms & reference
     return round(1.0 - len(intersection) / len(union), 4)
 
-
 def compute_heuristic_score(bf: BehavioralFeatures) -> float:
-    """
-    Rule-based risk score — mirrors the Kotlin WorkManager on-device engine.
-    No network calls. Runs in <1ms.
-    """
     score = 0.0
 
     if bf.claims_to_be_sbi:
@@ -214,19 +165,7 @@ def compute_heuristic_score(bf: BehavioralFeatures) -> float:
 
     return round(min(score, 1.0), 4)
 
-
 def behavioral_features_from_dict(d: dict) -> BehavioralFeatures:
-    """
-    Build BehavioralFeatures from a plain dict.
-    Called by:
-      - The Kotlin MethodChannel bridge (passes PackageManager data)
-      - The self-test scenarios below
-    
-    Required dict key: 'permissions' (list of full Android permission strings)
-    Optional keys: package_name, claims_to_be_sbi, is_sideloaded,
-                   overlay_window_declared, activity_count, service_count,
-                   receiver_count, uses_native_code, min_sdk, target_sdk
-    """
     perms = set(d.get("permissions", []))
     bf    = BehavioralFeatures()
 
@@ -268,9 +207,7 @@ def behavioral_features_from_dict(d: dict) -> BehavioralFeatures:
 
     return bf
 
-
 def extract_behavioral_features_live(apk_path: str) -> BehavioralFeatures:
-    """Extract BehavioralFeatures directly from an APK file (requires androguard)."""
     if not ANDROGUARD_AVAILABLE or not Path(apk_path).exists():
         print(f"  [WARN] Cannot extract from: {apk_path}")
         return BehavioralFeatures()
@@ -298,7 +235,7 @@ def extract_behavioral_features_live(apk_path: str) -> BehavioralFeatures:
             "uses_native_code":      bool(apk.get_libraries()),
             "min_sdk":               int(apk.get_min_sdk_version()    or 0),
             "target_sdk":            int(apk.get_target_sdk_version() or 0),
-            "is_sideloaded":         False,  # set by Kotlin bridge in production
+            "is_sideloaded":         False,
         })
         return bf
 
@@ -306,28 +243,17 @@ def extract_behavioral_features_live(apk_path: str) -> BehavioralFeatures:
         print(f"  [APK ERROR] {e}")
         return BehavioralFeatures()
 
-# =============================================================================
-# 3.  DATASET LOADING & FEATURE ENGINEERING
-#     data.csv : 215 binary cols, label 'class' (B=Benign, S=Malware)
-#     feature_description.csv : feature → category type
-#
-#     We derive our behavioral feature vector from the raw 215 columns
-#     by matching column names to known permission/API patterns.
-# =============================================================================
-
 def resolve_dataset_csv() -> Path | None:
     for p in DATA_PATH_CANDIDATES:
         if p.exists():
             return p
     return None
 
-
 def resolve_feature_desc_path() -> Path | None:
     for p in FEAT_DESC_CANDIDATES:
         if p.exists():
             return p
     return None
-
 
 def load_feature_types() -> dict:
     p = resolve_feature_desc_path()
@@ -356,18 +282,11 @@ def load_feature_types() -> dict:
         print(f"  [WARN] Could not load feature description ({p}): {e}")
         return {}
 
-
 def engineer_behavioral_features(df_raw: pd.DataFrame) -> pd.DataFrame:
-    """
-    Derive 24 behavioral features from the raw 215-column binary matrix.
-    Each derived feature corresponds to a field in BehavioralFeatures.
-    Allows the ML model to learn from meaningful semantic signals.
-    """
     feat = pd.DataFrame(index=df_raw.index)
-    cols = df_raw.columns  # e.g. "SEND_SMS", "READ_SMS", "BIND_ACCESSIBILITY_SERVICE"
+    cols = df_raw.columns
 
     def col_flag(keywords: list) -> pd.Series:
-        """Return 1 if ANY matching column is 1, else 0."""
         matching = [c for c in cols if any(kw.upper() in c.upper() for kw in keywords)]
         return df_raw[matching].max(axis=1) if matching else pd.Series(0, index=df_raw.index)
 
@@ -375,7 +294,6 @@ def engineer_behavioral_features(df_raw: pd.DataFrame) -> pd.DataFrame:
         matching = [c for c in cols if any(kw.upper() in c.upper() for kw in keywords)]
         return df_raw[matching].sum(axis=1) if matching else pd.Series(0, index=df_raw.index)
 
-    # ── Permission flags ──────────────────────────────────────────────────────
     feat["has_overlay_permission"] = col_flag(["SYSTEM_ALERT_WINDOW", "ALERT_WINDOW"])
     feat["has_accessibility"]      = col_flag(["BIND_ACCESSIBILITY_SERVICE", "ACCESSIBILITY"])
     feat["has_sms_read"]           = col_flag(["READ_SMS"])
@@ -388,7 +306,6 @@ def engineer_behavioral_features(df_raw: pd.DataFrame) -> pd.DataFrame:
     feat["uses_native_code"]       = col_flag(["System.loadLibrary", "Runtime.loadLibrary",
                                                "DexClassLoader", "ClassLoader"])
 
-    # ── Count-based features ──────────────────────────────────────────────────
     feat["permission_count"]       = df_raw.sum(axis=1)
     feat["dangerous_perm_count"]   = (
         feat["has_sms_read"].astype(int) +
@@ -402,22 +319,19 @@ def engineer_behavioral_features(df_raw: pd.DataFrame) -> pd.DataFrame:
         feat["has_overlay_permission"].astype(int)
     )
 
-    # ── Dangerous combo score ─────────────────────────────────────────────────
-    # Combo 1: Overlay + Accessibility → fake login screen
     combo1 = feat["has_overlay_permission"] * feat["has_accessibility"]
-    # Combo 2: two or more of READ / RECEIVE / SEND_SMS → OTP / smishing patterns
+
     sms_perm_sum = (
         feat["has_sms_read"].astype(int)
         + feat["has_sms_receive"].astype(int)
         + feat["has_send_sms"].astype(int)
     )
     combo2 = (sms_perm_sum >= 2).astype(int)
-    # Combo 3: Accessibility + RECORD_AUDIO + CAMERA → keylogger/screen capture
+
     combo3 = feat["has_accessibility"] * feat["has_record_audio"] * feat["has_camera"]
     feat["dangerous_combo_count"] = (combo1 + combo2 + combo3).clip(0, 5)
 
-    # ── Other signals ─────────────────────────────────────────────────────────
-    feat["overlay_window_declared"] = feat["has_overlay_permission"]  # proxy from static
+    feat["overlay_window_declared"] = feat["has_overlay_permission"]
     feat["forbidden_perm_count"]    = (feat["has_sms_read"].astype(int) +
                                        feat["has_sms_receive"].astype(int) +
                                        feat["has_send_sms"].astype(int) +
@@ -425,7 +339,6 @@ def engineer_behavioral_features(df_raw: pd.DataFrame) -> pd.DataFrame:
                                        feat["has_overlay_permission"].astype(int))
     feat["fingerprint_divergence"]  = (feat["dangerous_perm_count"] / 10.0).clip(0, 1)
 
-    # ── API abuse signals (from API call signature features) ──────────────────
     feat["uses_reflection"]         = col_flag(["Class.getMethod", "Class.getDeclaredField",
                                                 "Class.forName", "DexClassLoader"])
     feat["uses_crypto"]             = col_flag(["SecretKeySpec", "Cipher", "SecretKey", "KeySpec"])
@@ -443,7 +356,6 @@ def engineer_behavioral_features(df_raw: pd.DataFrame) -> pd.DataFrame:
     feat["accesses_device_id"]      = col_flag(["getDeviceId", "getSubscriberId",
                                                 "getSimSerialNumber", "getLine1Number"])
 
-    # ── Heuristic risk score (mirrors Kotlin on-device engine) ───────────────
     feat["heuristic_risk_score"] = (
         0.20 * feat["has_accessibility"].astype(float) +
         0.15 * feat["has_overlay_permission"].astype(float) +
@@ -460,7 +372,6 @@ def engineer_behavioral_features(df_raw: pd.DataFrame) -> pd.DataFrame:
         0.03 * feat["uses_reflection"].astype(float)
     ).clip(0, 1).round(4)
 
-    # Static-feature-only defaults (populated by Kotlin bridge at runtime)
     feat["claims_to_be_sbi"] = 0
     feat["is_sideloaded"]    = 0
     feat["activity_count"]   = 0
@@ -471,12 +382,7 @@ def engineer_behavioral_features(df_raw: pd.DataFrame) -> pd.DataFrame:
 
     return feat.fillna(0).astype(float)
 
-
 def load_dataset(csv_path: Path):
-    """
-    Load data.csv (B=Benign, S=Malware) and engineer behavioral features.
-    Returns: X (DataFrame of engineered features), y (0/1 ndarray), feature_names (list)
-    """
     print(f"\n[1/5] Loading dataset: {csv_path}")
     df = pd.read_csv(csv_path)
     print(f"      Shape: {df.shape}")
@@ -518,10 +424,6 @@ def load_dataset(csv_path: Path):
 
     return X, y, X.columns.tolist()
 
-# =============================================================================
-# 4.  MODEL TRAINING
-# =============================================================================
-
 def train(X: pd.DataFrame, y: np.ndarray, feature_names: list) -> tuple:
     print("\n[2/5] Splitting (80/20 stratified) ...")
     X_tr, X_te, y_tr, y_te = train_test_split(
@@ -529,7 +431,6 @@ def train(X: pd.DataFrame, y: np.ndarray, feature_names: list) -> tuple:
     )
     print(f"      Train: {len(X_tr)}  |  Test: {len(X_te)}")
 
-    # ── A: Supervised RandomForest ────────────────────────────────────────────
     rf_pipeline = Pipeline([
         ("scaler", StandardScaler()),
         ("clf",    RandomForestClassifier(
@@ -562,7 +463,6 @@ def train(X: pd.DataFrame, y: np.ndarray, feature_names: list) -> tuple:
     print(f"  Fold AUC : {np.round(cv, 4)}")
     print(f"  Mean AUC : {cv.mean():.4f} ± {cv.std():.4f}")
 
-    # Feature importance
     importances = rf_pipeline.named_steps["clf"].feature_importances_
     top10 = sorted(zip(feature_names, importances), key=lambda x: -x[1])[:10]
     print("\n  Top 10 Behavioral Features ────────────────────────────────────────────")
@@ -570,23 +470,21 @@ def train(X: pd.DataFrame, y: np.ndarray, feature_names: list) -> tuple:
         bar = "█" * int(imp * 500)
         print(f"  {name:<40} {bar} {imp:.4f}")
 
-    # ── B: Isolation Forest — catches NOVEL zero-day malware ──────────────────
     print("\n  Training Isolation Forest (unsupervised zero-day detection) ...")
     X_benign = X_tr[y_tr == 0]
     iso = IsolationForest(
         n_estimators=100,
-        contamination=0.05,  # expect ~5% anomalies in benign set
+        contamination=0.05,
         random_state=42,
         n_jobs=-1,
     )
     iso.fit(X_benign)
-    iso_labels  = iso.predict(X_te)           # -1=anomaly, +1=normal
+    iso_labels  = iso.predict(X_te)
     iso_malware = (iso_labels == -1).astype(int)
     iso_acc     = (iso_malware == y_te).mean()
     print(f"  IsolationForest accuracy on test set: {iso_acc:.4f}")
     print(f"  (Trains only on benign apps → detects any deviation as anomaly)")
 
-    # Save eval report
     rp = REPORT_DIR / "model3_eval_report.json"
     rp.write_text(json.dumps({
         "timestamp":                   datetime.now().isoformat(),
@@ -601,16 +499,11 @@ def train(X: pd.DataFrame, y: np.ndarray, feature_names: list) -> tuple:
 
     return rf_pipeline, iso
 
-# =============================================================================
-# 5.  INFERENCE
-# =============================================================================
-
 RISK_THRESHOLDS = {
     "SAFE":       (0.00, 0.30),
-    "SUSPICIOUS": (0.30, 0.60),  # → SBI analyst review queue
-    "CRITICAL":   (0.60, 1.01),  # → immediate alert + CERT-In report
+    "SUSPICIOUS": (0.30, 0.60),
+    "CRITICAL":   (0.60, 1.01),
 }
-
 
 def predict(
     bf: BehavioralFeatures,
@@ -641,7 +534,6 @@ def predict(
     )
     print(f"  Heuristic score    : {bf.heuristic_risk_score:.3f}")
 
-    # Build feature row aligned to training feature names
     bf_dict = asdict(bf)
     row = {}
     for fn in feature_names:
@@ -649,18 +541,14 @@ def predict(
         row[fn] = float(val) if not isinstance(val, str) else 0.0
     X_live = pd.DataFrame([row])[feature_names].fillna(0.0)
 
-    # Supervised RF probability
     ml_prob = float(rf_pipeline.predict_proba(X_live)[0][1])
 
-    # Isolation Forest anomaly score → 0–1 risk
-    iso_score_raw = float(iso.score_samples(X_live)[0])  # negative = anomalous
+    iso_score_raw = float(iso.score_samples(X_live)[0])
     iso_risk      = float(np.clip(-iso_score_raw + 0.5, 0, 1))
 
-    # Score fusion: 50% ML + 30% IsoForest + 20% heuristic
     final_score = 0.50 * ml_prob + 0.30 * iso_risk + 0.20 * bf.heuristic_risk_score
     final_score = round(float(np.clip(final_score, 0, 1)), 4)
 
-    # Hard override: YONO-claiming app with forbidden perms → CRITICAL
     if bf.claims_to_be_sbi and bf.forbidden_perm_count > 0:
         final_score = max(final_score, 0.75)
         print(f"\n  [!] FORCED TO CRITICAL: {bf.forbidden_perm_count} YONO-forbidden perm(s) detected")
@@ -670,7 +558,6 @@ def predict(
         if lo <= final_score < hi:
             verdict = v; break
 
-    # Explain triggered signals
     triggered = []
     if bf.claims_to_be_sbi and bf.forbidden_perm_count > 0:
         triggered.append(f"YONO-forbidden permission(s): {bf.forbidden_perm_count} detected")
@@ -723,16 +610,11 @@ def predict(
 
     return result
 
-# =============================================================================
-# 6.  BUILT-IN SELF-TEST (3 synthetic scenarios)
-# =============================================================================
-
 def run_self_test(rf_pipeline, iso, feature_names):
     print("\n" + "═"*62)
     print("  SELF-TEST: Synthetic Scenarios")
     print("═"*62)
 
-    # Scenario 1: Genuine YONO app
     print("\n  Scenario 1 — Genuine YONO SBI App (expected: SAFE)")
     bf1 = behavioral_features_from_dict({
         "package_name":     "com.sbi.lotusintouch",
@@ -742,7 +624,6 @@ def run_self_test(rf_pipeline, iso, feature_names):
     })
     predict(bf1, rf_pipeline, iso, feature_names)
 
-    # Scenario 2: Fake YONO with forbidden permissions + overlay + sideloaded
     print("\n  Scenario 2 — Fake YONO Clone (expected: CRITICAL)")
     bf2 = behavioral_features_from_dict({
         "package_name":     "com.sbi.yono.kyc.update",
@@ -751,17 +632,16 @@ def run_self_test(rf_pipeline, iso, feature_names):
         "permissions": [
             "android.permission.INTERNET",
             "android.permission.CAMERA",
-            "android.permission.BIND_ACCESSIBILITY_SERVICE",   # FORBIDDEN
-            "android.permission.SYSTEM_ALERT_WINDOW",          # FORBIDDEN
-            "android.permission.READ_SMS",                     # FORBIDDEN
-            "android.permission.RECEIVE_SMS",                  # FORBIDDEN
+            "android.permission.BIND_ACCESSIBILITY_SERVICE",
+            "android.permission.SYSTEM_ALERT_WINDOW",
+            "android.permission.READ_SMS",
+            "android.permission.RECEIVE_SMS",
             "android.permission.SEND_SMS",
         ],
         "overlay_window_declared": True,
     })
     predict(bf2, rf_pipeline, iso, feature_names)
 
-    # Scenario 3: Generic banking malware (not impersonating SBI)
     print("\n  Scenario 3 — Generic Banking Malware (expected: CRITICAL/SUSPICIOUS)")
     bf3 = behavioral_features_from_dict({
         "package_name": "com.flashlight.battery.saver",
@@ -778,16 +658,11 @@ def run_self_test(rf_pipeline, iso, feature_names):
     })
     predict(bf3, rf_pipeline, iso, feature_names)
 
-# =============================================================================
-# 7.  MAIN
-# =============================================================================
-
 def main():
     print("╔══════════════════════════════════════════════════════════╗")
     print("║  KAVACH · ML Model 3 · Behavioral Anomaly Engine        ║")
     print("╚══════════════════════════════════════════════════════════╝")
 
-    # ── Training ──────────────────────────────────────────────────────────────
     if not MODEL_PATH.exists() or not ISO_PATH.exists():
         data_csv = resolve_dataset_csv()
         if data_csv is None:
@@ -816,7 +691,6 @@ def main():
     iso           = joblib.load(ISO_PATH)
     feature_names = json.loads(FEATURES_PATH.read_text())
 
-    # ── Inference ─────────────────────────────────────────────────────────────
     if len(sys.argv) > 1:
         arg = sys.argv[1]
         if arg == "--self-test":
@@ -837,7 +711,6 @@ def main():
         print("\n  Usage:")
         print("    python apk_ml_model/scripts/model3_behavioral_engine.py path/to/app.apk")
         print("    python apk_ml_model/scripts/model3_behavioral_engine.py --self-test")
-
 
 if __name__ == "__main__":
     main()

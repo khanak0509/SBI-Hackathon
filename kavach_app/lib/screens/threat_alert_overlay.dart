@@ -67,7 +67,7 @@ class ThreatAlertOverlay extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 32),
-                  // RISK SCORE BAR
+
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(

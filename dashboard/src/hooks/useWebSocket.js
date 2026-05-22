@@ -24,7 +24,7 @@ export function useWebSocket(url) {
             setLatestNewThreat(msg.payload)
           }
         } catch {
-          /* ignore */
+
         }
       }
     } catch {

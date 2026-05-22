@@ -5,12 +5,11 @@ import sys
 from pathlib import Path
 from typing import Any
 
-# Ensure backend root is importable (url_ml_model, apk_ml_model)
 _BACKEND_ROOT = Path(__file__).resolve().parents[1]
 if str(_BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(_BACKEND_ROOT))
 
-from apk_ml_model.apk_runtime import (  # noqa: E402
+from apk_ml_model.apk_runtime import (
     APK_FEATURE_NAMES,
     OFFICIAL_SBI_CERT_SHA256,
     extract_apk_features,
@@ -18,7 +17,7 @@ from apk_ml_model.apk_runtime import (  # noqa: E402
     load_apk_artifacts,
     malware_probability,
 )
-from url_ml_model.url_runtime import (  # noqa: E402
+from url_ml_model.url_runtime import (
     extract_features,
     load_url_artifacts,
     phishing_probability,
@@ -30,7 +29,6 @@ _url_names: list[str] | None = None
 _apk_model: Any = None
 _apk_names: list[str] | None = None
 
-
 async def ensure_models() -> None:
     global _url_model, _url_names, _apk_model, _apk_names
     async with _lock:
@@ -38,7 +36,6 @@ async def ensure_models() -> None:
             _url_model, _url_names = load_url_artifacts()
         if _apk_model is None:
             _apk_model, _apk_names = load_apk_artifacts()
-
 
 def _apk_permissions(path: str) -> list[str]:
     try:
@@ -49,12 +46,10 @@ def _apk_permissions(path: str) -> list[str]:
     except Exception:
         return []
 
-
 def _cert_official(cert_sha: str) -> bool:
     if not cert_sha:
         return False
     return cert_sha.lower().strip() == OFFICIAL_SBI_CERT_SHA256.lower().strip()
-
 
 def _host_from_url(url: str) -> str | None:
     try:
@@ -66,7 +61,6 @@ def _host_from_url(url: str) -> str | None:
         return h or None
     except Exception:
         return None
-
 
 async def scan_url_ml(
     url: str, settings: Any
@@ -89,7 +83,6 @@ async def scan_url_ml(
         verdict = "safe"
         conf = min(0.99, 1.0 - prob * 0.8)
     return verdict, conf, prob, {k: feats.get(k, 0) for k in _url_names}
-
 
 async def scan_apk_ml(
     path: str, settings: Any
@@ -131,7 +124,6 @@ async def scan_apk_ml(
 
     behavior = build_behavior_analysis(feats, perms, mal)
     return verdict, conf, feats, cert, official, pkg, behavior, perms
-
 
 def build_behavior_analysis(
     feats: dict[str, Any], perms: list[str], malware_prob: float

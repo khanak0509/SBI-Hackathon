@@ -1,11 +1,4 @@
-"""
-URL phishing feature extraction + helpers for inference/tests.
-Keep in sync with train_url_model.ipynb.
 
-Inference applies a small **trusted-domain allowlist** (same hosts as LEGITIMATE_SBI)
-so official bank URLs are not blocked when the ML model false-positives — normal for
-banking and demo/hackathon reliability. Disable with phishing_probability(..., apply_trusted_domain_cap=False).
-"""
 from __future__ import annotations
 
 import os
@@ -56,7 +49,6 @@ SBI_KEYWORDS = [
 ]
 
 def _host_registered_fqdn(url: str) -> tuple[str, str, str]:
-    """Return (host_without_port, registered_domain, fqdn) lowercase."""
     import tldextract
 
     url = str(url).strip()
@@ -73,12 +65,7 @@ def _host_registered_fqdn(url: str) -> tuple[str, str, str]:
     fqdn = (ext.fqdn or host_no_port).lower()
     return host_no_port, registered, fqdn
 
-
 def is_trusted_bank_url(url: str) -> bool:
-    """
-    True if the URL host is a known-legitimate SBI / group domain (allowlist).
-    Used at inference to prevent blocking real bank sites when the classifier errs.
-    """
     try:
         host, registered, fqdn = _host_registered_fqdn(url)
     except Exception:
@@ -96,7 +83,6 @@ def is_trusted_bank_url(url: str) -> bool:
         if host and (host == d or host.endswith("." + d)):
             return True
     return False
-
 
 FEATURE_NAMES: list[str] = [
     "url_length",
@@ -117,7 +103,6 @@ FEATURE_NAMES: list[str] = [
     "has_sbi_keyword",
 ]
 
-
 def levenshtein(s1: str, s2: str) -> int:
     m, n = len(s1), len(s2)
     dp = list(range(n + 1))
@@ -133,9 +118,8 @@ def levenshtein(s1: str, s2: str) -> int:
             prev = temp
     return dp[n]
 
-
 def extract_features(url: str) -> dict[str, float | int]:
-    import tldextract  # optional at import time; required for feature extraction
+    import tldextract
 
     url = str(url).strip()
     try:
@@ -185,12 +169,10 @@ def extract_features(url: str) -> dict[str, float | int]:
     except Exception:
         return {k: 0 for k in FEATURE_NAMES}
 
-
 def feature_vector(url: str, feature_names: Sequence[str] | None = None) -> np.ndarray:
     names = list(feature_names) if feature_names is not None else FEATURE_NAMES
     feats = extract_features(url)
     return np.array([[feats[f] for f in names]], dtype=float)
-
 
 def default_model_paths(data_dir: str | None = None) -> tuple[str, str]:
     base = data_dir or os.path.join(os.path.dirname(__file__), "data")
@@ -198,7 +180,6 @@ def default_model_paths(data_dir: str | None = None) -> tuple[str, str]:
         os.path.join(base, "url_model.pkl"),
         os.path.join(base, "feature_names.pkl"),
     )
-
 
 def load_url_artifacts(
     model_path: str | None = None,
@@ -213,7 +194,6 @@ def load_url_artifacts(
     names: list[str] = list(joblib.load(fp))
     return model, names
 
-
 def raw_model_phishing_probability(
     url: str,
     model: Any,
@@ -222,7 +202,6 @@ def raw_model_phishing_probability(
     """XGBoost score only (no allowlist). For debugging / ablations."""
     x = feature_vector(url, feature_names)
     return float(model.predict_proba(x)[0, 1])
-
 
 def phishing_probability(
     url: str,

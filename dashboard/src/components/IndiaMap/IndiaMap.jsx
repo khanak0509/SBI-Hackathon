@@ -6,12 +6,11 @@ import L from 'leaflet'
 import { threatLatLng, INDIA_CENTER_LNG, INDIA_CENTER_LAT } from '../../utils/geoHelpers'
 import { threatPlaceLabel, threatCoordLabel, VERDICT } from '../../utils/formatters'
 
-// Helper to create custom HTML markers for threats
 const getCustomIcon = (threat, pulsing, selected) => {
   const color = VERDICT.color[threat.verdict] || 'var(--t3)'
   const size = selected || pulsing ? 20 : 10
   const zIndex = selected || pulsing ? 1000 : 1
-  
+
   const html = `
     <div style="position: relative; width: ${size}px; height: ${size}px; transform: translate(-50%, -50%); z-index: ${zIndex};">
       ${pulsing ? `<div style="position: absolute; inset: -12px; border-radius: 50%; border: 2.5px solid ${color}; animation: threat-ring 1.2s ease-out infinite;"></div>` : ''}
@@ -26,10 +25,9 @@ const getCustomIcon = (threat, pulsing, selected) => {
   })
 }
 
-// Controller to handle automatic movie-like zooming
 function MapController({ pulseThreat, selectedThreat }) {
   const map = useMap()
-  
+
   useEffect(() => {
     if (pulseThreat) {
       const [lat, lng] = threatLatLng(pulseThreat)
@@ -101,12 +99,12 @@ export default function IndiaMap({ threats, selectedThreat, pulseThreat, onThrea
         style={{ width: '100%', height: '100%', zIndex: 1 }}
         ref={mapRef}
       >
-        {/* Real Satellite Map with Labels (Hybrid) */}
+        {}
         <TileLayer
           url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
           attribution="&copy; Google Maps"
         />
-        
+
         <MapController pulseThreat={pulseThreat} selectedThreat={selectedThreat} />
 
         {threats.map((t) => {

@@ -57,7 +57,7 @@ export default function ThreatPanel({ threat, onClose }) {
       setReports(data)
       setShowModal(true)
     } catch {
-      /* ignore */
+
     }
     setLoadingRep(false)
   }
@@ -67,7 +67,7 @@ export default function ThreatPanel({ threat, onClose }) {
       await api.markReported(threat.id, { certin: true, google: true, cybercrime: false })
       setMarked(true)
     } catch {
-      /* ignore */
+
     }
   }
 

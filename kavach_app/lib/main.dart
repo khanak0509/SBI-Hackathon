@@ -19,10 +19,6 @@ Future<void> main() async {
   );
   await NotificationService.init();
 
-  // ── Self-integrity check ──────────────────────────────────────────────────
-  // Only runs in release builds. In debug mode (flutter run / dev) the app
-  // is signed with a debug key — so we skip this check intentionally.
-  // In a production release the officialCertHash must match SBI's release key.
   if (!kDebugMode) {
     final trusted = await NativeBridge.verifyIntegrity(K.officialCertHash);
     if (!trusted) {
@@ -30,7 +26,6 @@ Future<void> main() async {
       return;
     }
   }
-  // ─────────────────────────────────────────────────────────────────────────
 
   runApp(
     ChangeNotifierProvider(
@@ -40,8 +35,6 @@ Future<void> main() async {
   );
 }
 
-/// Shown when the app's signing cert does not match the pinned SBI hash.
-/// The user cannot proceed — they must uninstall and re-download from Play Store.
 class _TamperedApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {

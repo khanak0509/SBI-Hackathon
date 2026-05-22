@@ -19,7 +19,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
-  bool _notificationAccessGranted = true; // Assume true until checked
+  bool _notificationAccessGranted = true; 
 
   @override
   void initState() {
@@ -53,17 +53,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         _showPermissionBottomSheet();
       } else {
         if (Navigator.of(context).canPop()) {
-           // We might have the bottom sheet open, but let's be careful not to pop something else.
-           // Actually, it's safer to let the user press "Skip" or we could pop specifically.
+
         }
       }
     }
   }
 
   void _showPermissionBottomSheet() {
-    // Only show if not already showing
+
     if (ModalRoute.of(context)?.isCurrent != true) return;
-    
+
     showModalBottomSheet(
       context: context,
       isDismissible: false,

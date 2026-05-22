@@ -38,16 +38,14 @@ class KavachService extends ChangeNotifier {
   Future<void> initialize() async {
     isWatchActive = true;
     notifyListeners();
-    
-    // 1. MUST fetch location first so we have it for background reports
+
     await refreshDeviceLocation();
 
-    // 2. Listen for native PACKAGE_ADDED events from KavachPackageReceiver
     NativeBridge.packageThreatStream.listen((event) async {
       debugPrint("KAVACH_DEBUG: Received package threat stream event! $event");
       final pkg = event['package_name'] ?? 'unknown';
       final sim = event['similarity'] ?? 0.8;
-      
+
       activeThreat = {
         'package_name': pkg,
         'verdict': 'fake_apk',
@@ -62,12 +60,12 @@ class KavachService extends ChangeNotifier {
 
     await loadStats();
     await loadRecentThreats();
-    // 3. Check if a threat was detected while the app was backgrounded
+
     await checkPendingThreat();
   }
 
   Future<void> reportThreatToDashboard(String pkg, double similarity) async {
-    // DEDUPLICATION: Don't report the same package twice in 30 seconds
+
     final now = DateTime.now();
     if (_lastReportedPackage == pkg &&
         _lastReportedTime != null &&
@@ -76,7 +74,6 @@ class KavachService extends ChangeNotifier {
       return;
     }
 
-    // ATOMIC LOCK: Don't allow simultaneous reports for the same package
     if (_reportingPackages.contains(pkg)) {
       debugPrint("KAVACH_DEBUG: Skipping duplicate report (lock-based) for $pkg");
       return;
@@ -86,7 +83,6 @@ class KavachService extends ChangeNotifier {
     _lastReportedPackage = pkg;
     _lastReportedTime = now;
 
-    // Ensure we have location before reporting (wait up to 8s if null)
     int retries = 0;
     while (deviceLocationFields == null && retries < 8) {
       debugPrint("KAVACH_DEBUG: Location missing, fetching... (Attempt ${retries + 1})");
@@ -111,8 +107,6 @@ class KavachService extends ChangeNotifier {
     }
   }
 
-  /// Called by the app shell on resume to detect installs that happened
-  /// while KAVACH was in the background.
   Future<void> checkPendingThreat() async {
     debugPrint("KAVACH_DEBUG: checkPendingThreat called!");
     final threat = await NativeBridge.checkPendingPackageThreat();
@@ -120,7 +114,7 @@ class KavachService extends ChangeNotifier {
     if (threat != null) {
       final pkg = threat['package_name'] ?? 'unknown';
       final sim = (threat['similarity'] as num?)?.toDouble() ?? 0.8;
-      
+
       activeThreat = threat;
       await NativeBridge.clearPendingPackageThreat();
       notifyListeners();
@@ -129,7 +123,6 @@ class KavachService extends ChangeNotifier {
     }
   }
 
-  /// Requests permission and caches city/state + coordinates for scans.
   Future<void> refreshDeviceLocation() async {
     try {
       final snap = await captureDeviceLocation();

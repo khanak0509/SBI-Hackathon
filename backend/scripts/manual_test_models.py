@@ -1,42 +1,19 @@
-#!/usr/bin/env python3
-"""
-Quick manual checks for the trained KAVACH models.
 
-Usage (from anywhere):
-  cd SBI-Hackathon/backend
-  python3 scripts/manual_test_models.py
-
-Edit the variables below, then run again.
-"""
 from __future__ import annotations
 
 import sys
 from pathlib import Path
 
-# --- backend on path ---------------------------------------------------------
 BACKEND = Path(__file__).resolve().parents[1]
 if str(BACKEND) not in sys.path:
     sys.path.insert(0, str(BACKEND))
 
-# =============================================================================
-# EDIT THESE
-# =============================================================================
-
-# Paste any URL string here; run the script as many times as you want.
 URL_TO_TEST = "https://www.google.com/"
-# Final score uses the model + a trusted-bank allowlist (see url_runtime.is_trusted_bank_url).
-URL_PHISHING_THRESHOLD = 0.65  # >= this → treat as phishing (tune as you like)
 
-# Full path to a .apk file on your machine (not the APK binary as a string).
-# Examples:
-#   "/Users/you/Downloads/some-app.apk"
-#   r"C:\Users\you\Desktop\app.apk"
-# Leave None to skip APK testing.
+URL_PHISHING_THRESHOLD = 0.65
+
 APK_FILE_PATH: str | None = None
-APK_MALWARE_THRESHOLD = 0.70  # >= this → high malware risk in notebook logic
-
-# =============================================================================
-
+APK_MALWARE_THRESHOLD = 0.70
 
 def run_url() -> None:
     from url_ml_model import url_runtime
@@ -52,7 +29,6 @@ def run_url() -> None:
     print("Model-only score:", f"{raw * 100:.2f}%", "(before allowlist)")
     print("Final score:    ", f"{p * 100:.2f}%", "phishing probability")
     print("Verdict:        ", verdict, f"(threshold {URL_PHISHING_THRESHOLD:.2f})\n")
-
 
 def run_apk() -> None:
     from apk_ml_model import apk_runtime
@@ -92,12 +68,10 @@ def run_apk() -> None:
     print("Impersonating SBI (rule):", impersonating)
     print("Verdict: ", verdict, f"(threshold {APK_MALWARE_THRESHOLD:.2f})\n")
 
-
 def main() -> None:
     print("Backend:", BACKEND)
     run_url()
     run_apk()
-
 
 if __name__ == "__main__":
     main()

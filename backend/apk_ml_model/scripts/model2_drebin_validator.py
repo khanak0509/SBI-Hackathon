@@ -1,28 +1,3 @@
-"""
-╔══════════════════════════════════════════════════════════════════════╗
-║  KAVACH — ML Model 2: APK Signature Validator                       ║
-║  SBI FinNovation PSB Hackathon 2026 · IIT Jodhpur                   ║
-╠══════════════════════════════════════════════════════════════════════╣
-║  Dataset files (Kaggle: shashwatwork/android-malware-dataset):      ║
-║    data/data.csv               — 215 features + 'class' col (B/S)   ║
-║    data/feature_description.csv — feature name → type mapping       ║
-║  Extra   : androguard for live APK certificate extraction           ║
-║  Output  : SAFE / QUARANTINE / MALICIOUS + risk score               ║
-╚══════════════════════════════════════════════════════════════════════╝
-
-Install:
-    pip install androguard scikit-learn pandas numpy joblib
-
-Paths are resolved from apk_ml_model/ (this file lives in apk_ml_model/scripts/).
-
-Dataset (under apk_ml_model/data/):
-    drebin-215-dataset-5560malware-9476-benign.csv
-    dataset-features-categories.csv  (optional: feature_description.csv)
-
-Train / scan (from repo backend/):
-    python apk_ml_model/scripts/model2_drebin_validator.py
-    python apk_ml_model/scripts/model2_drebin_validator.py path/to/app.apk
-"""
 
 import hashlib
 import json
@@ -45,17 +20,17 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 
 try:
-    from androguard.core.apk import APK  # androguard >= 4
+    from androguard.core.apk import APK
 
     ANDROGUARD_AVAILABLE = True
 except ImportError:
     try:
-        from androguard.core.bytecodes.apk import APK  # androguard 3.x
+        from androguard.core.bytecodes.apk import APK
 
         ANDROGUARD_AVAILABLE = True
     except ImportError:
         ANDROGUARD_AVAILABLE = False
-        APK = None  # type: ignore[misc, assignment]
+        APK = None
 if not ANDROGUARD_AVAILABLE:
     print("[WARN] androguard not installed → live APK scan disabled (training still works)")
     print("       Install: pip install androguard")
@@ -67,10 +42,6 @@ else:
         _loguru_logger.add(sys.stderr, level="WARNING")
     except Exception:
         pass
-
-# =============================================================================
-# 0.  PATHS  (apk_ml_model package root)
-# =============================================================================
 
 _PKG = Path(__file__).resolve().parent.parent
 
@@ -87,12 +58,6 @@ MODEL_PATH    = MODEL_DIR / "model2_apk_validator.pkl"
 FEATURES_PATH = MODEL_DIR / "model2_feature_names.json"
 FEAT_TYPE_PATH= MODEL_DIR / "model2_feature_types.json"
 
-# =============================================================================
-# 1.  SBI OFFICIAL CERTIFICATE REGISTRY
-#     Replace placeholders with real SHA-256 from official Play Store APKs:
-#       keytool -printcert -jarfile YONO.apk
-# =============================================================================
-
 SBI_CERT_REGISTRY = {
     "com.sbi.lotusintouch": [
         "REPLACE_WITH_OFFICIAL_YONO_CERT_SHA256",
@@ -104,10 +69,6 @@ SBI_CERT_REGISTRY = {
         "REPLACE_WITH_OFFICIAL_SBIPORTAL_CERT_SHA256",
     ],
 }
-
-# =============================================================================
-# 2.  PERMISSION & BEHAVIOURAL THREAT SIGNALS
-# =============================================================================
 
 DANGEROUS_COMBOS = [
     {"android.permission.BIND_ACCESSIBILITY_SERVICE",
@@ -137,10 +98,6 @@ NETWORK_RE = re.compile(
     re.IGNORECASE,
 )
 
-# =============================================================================
-# 3.  LIVE APK FEATURE EXTRACTION  (requires androguard)
-# =============================================================================
-
 def extract_cert_sha256(apk_path: str):
     if not ANDROGUARD_AVAILABLE:
         return None
@@ -151,7 +108,6 @@ def extract_cert_sha256(apk_path: str):
     except Exception as e:
         print(f"  [CERT ERROR] {e}")
     return None
-
 
 def check_cert(package_name: str, cert_sha256):
     result = {
@@ -168,7 +124,6 @@ def check_cert(package_name: str, cert_sha256):
             result["cert_matches"]   = cert_sha256 in valid_hashes
             break
     return result
-
 
 def extract_apk_features_live(apk_path: str) -> dict:
     f = {
@@ -257,7 +212,6 @@ def extract_apk_features_live(apk_path: str) -> dict:
             pass
         f["hardcoded_network_strings"] = min(net_hits, 999)
 
-        # Rule-based risk score
         risk = 0.0
         if f["cert_verdict"] == "FORGED":         risk += 0.60
         if f["dangerous_combo_score"] > 0:         risk += 0.15 * min(f["dangerous_combo_score"], 2)
@@ -271,24 +225,13 @@ def extract_apk_features_live(apk_path: str) -> dict:
 
     return f
 
-# =============================================================================
-# 4.  DATASET LOADING
-#     data.csv      : 215 binary columns + 'class' col  (B = Benign, S = Malware)
-#     feature_description.csv : feature → type  (Manifest Permission / API call / etc.)
-# =============================================================================
-
 def resolve_feature_desc_path() -> Path | None:
     for p in FEAT_DESC_CANDIDATES:
         if p.exists():
             return p
     return None
 
-
 def load_feature_types() -> dict:
-    """
-    Load feature → type mapping (Kaggle feature_description.csv or
-    data1/dataset-features-categories.csv). Used for logging only.
-    """
     p = resolve_feature_desc_path()
     if p is None:
         return {}
@@ -315,21 +258,13 @@ def load_feature_types() -> dict:
         print(f"  [WARN] Could not load feature description ({p}): {e}")
         return {}
 
-
 def load_dataset(csv_path: Path):
-    """
-    Load data.csv.
-    - 215 binary features (API calls, permissions, intents, shell commands)
-    - Label column 'class': 'B' = Benign (→ 0),  'S' = Malware (→ 1)
-    Returns: X (DataFrame), y (ndarray of 0/1), feature_names (list)
-    """
     print(f"\n[1/5] Loading dataset: {csv_path}")
     df = pd.read_csv(csv_path)
     print(f"      Rows x Cols : {df.shape}")
     print(f"      First 5 cols: {list(df.columns[:5])}")
     print(f"      Last  5 cols: {list(df.columns[-5:])}")
 
-    # Label column is 'class' in this dataset
     label_col = "class"
     if label_col not in df.columns:
         label_col = df.columns[-1]
@@ -339,7 +274,6 @@ def load_dataset(csv_path: Path):
     raw_counts = df[label_col].value_counts()
     print(f"      Raw values   :\n{raw_counts.to_string()}")
 
-    # Encode B → 0, S → 1
     y_raw = df[label_col].astype(str).str.strip()
     le    = LabelEncoder()
     y     = le.fit_transform(y_raw)
@@ -348,7 +282,6 @@ def load_dataset(csv_path: Path):
     if label_map.get("B") != 0 or label_map.get("S") != 1:
         print("      [WARN] Unexpected encoding order — check label values.")
 
-    # Feature matrix
     X = df.drop(columns=[label_col])
     non_num = X.select_dtypes(exclude=[np.number]).columns.tolist()
     if non_num:
@@ -356,7 +289,6 @@ def load_dataset(csv_path: Path):
         X = X.drop(columns=non_num)
     X = X.fillna(0).astype(float)
 
-    # Log feature type breakdown from feature-description CSV (if present)
     desc_src = resolve_feature_desc_path()
     feat_types = load_feature_types()
     if feat_types:
@@ -367,7 +299,7 @@ def load_dataset(csv_path: Path):
         print(f"\n      Feature breakdown ({desc_src}):")
         for ft, cnt in sorted(type_counts.items(), key=lambda x: -x[1]):
             print(f"        {ft:<40} {cnt:>4} features")
-        # Save for reference
+
         FEAT_TYPE_PATH.write_text(json.dumps(feat_types, indent=2))
     else:
         print(
@@ -379,10 +311,6 @@ def load_dataset(csv_path: Path):
     print(f"\n      Final X  : {X.shape}")
     print(f"      Benign   : {(y == 0).sum()}  |  Malware: {(y == 1).sum()}")
     return X, y, X.columns.tolist()
-
-# =============================================================================
-# 5.  MODEL TRAINING
-# =============================================================================
 
 def train(X: pd.DataFrame, y: np.ndarray, feature_names: list) -> Pipeline:
     print("\n[2/5] Splitting dataset (80 / 20 stratified) ...")
@@ -429,7 +357,6 @@ def train(X: pd.DataFrame, y: np.ndarray, feature_names: list) -> Pipeline:
     print(f"  Fold AUC: {np.round(cv, 4)}")
     print(f"  Mean AUC: {cv.mean():.4f} ± {cv.std():.4f}")
 
-    # Feature importance
     rf_fitted   = pipeline.named_steps["model"].estimators_[0]
     importances = rf_fitted.feature_importances_
     feat_types  = load_feature_types()
@@ -441,7 +368,6 @@ def train(X: pd.DataFrame, y: np.ndarray, feature_names: list) -> Pipeline:
         bar   = "█" * int(imp * 400)
         print(f"  {fname:<45} {bar} {imp:.4f}  [{ftype}]")
 
-    # Save eval report
     rp = REPORT_DIR / "model2_eval_report.json"
     rp.write_text(json.dumps({
         "timestamp":    datetime.now().isoformat(),
@@ -458,25 +384,13 @@ def train(X: pd.DataFrame, y: np.ndarray, feature_names: list) -> Pipeline:
 
     return pipeline
 
-# =============================================================================
-# 6.  INFERENCE
-# =============================================================================
-
 THRESHOLDS = {
     "SAFE":       (0.00, 0.35),
-    "QUARANTINE": (0.35, 0.65),   # → SBI analyst "Needs Review" queue
+    "QUARANTINE": (0.35, 0.65),
     "MALICIOUS":  (0.65, 1.01),
 }
 
-
 def predict(apk_path: str, pipeline: Pipeline, feature_names: list) -> dict:
-    """
-    Full inference on a live APK:
-      1. Extract certificate → check against SBI registry
-      2. Map permission signals to dataset feature columns
-      3. Run ML classifier
-      4. Fuse cert verdict + ML score → final verdict
-    """
     print(f"\n{'═'*62}")
     print(f"  Scanning APK: {apk_path}")
     print(f"{'═'*62}")
@@ -491,8 +405,6 @@ def predict(apk_path: str, pipeline: Pipeline, feature_names: list) -> dict:
     print(f"  Overlay declared : {lf['overlay_window_declared']}")
     print(f"  Network strings  : {lf['hardcoded_network_strings']}")
 
-    # Map live permissions to Drebin columns by exact name only (substring
-    # matching would mis-label intent columns like android.intent.action.SEND).
     row = {fn: 0.0 for fn in feature_names}
     exact = {
         "SEND_SMS": float(lf["has_send_sms"]),
@@ -513,7 +425,6 @@ def predict(apk_path: str, pipeline: Pipeline, feature_names: list) -> dict:
     X_live  = pd.DataFrame([row])[feature_names].fillna(0.0)
     ml_prob = float(pipeline.predict_proba(X_live)[0][1])
 
-    # Score fusion
     cert_boost = 0.50 if lf["cert_verdict"] == "FORGED" else \
                 -0.15 if lf["cert_verdict"] == "VALID"  else 0.0
 
@@ -564,16 +475,11 @@ def predict(apk_path: str, pipeline: Pipeline, feature_names: list) -> dict:
 
     return result
 
-# =============================================================================
-# 7.  MAIN
-# =============================================================================
-
 def main():
     print("╔══════════════════════════════════════════════════════════╗")
     print("║   KAVACH · ML Model 2 · APK Signature Validator         ║")
     print("╚══════════════════════════════════════════════════════════╝")
 
-    # ── Training ──────────────────────────────────────────────────────────────
     if not MODEL_PATH.exists():
         if not DATA_PATH.exists():
             print(f"\n[ERROR] Dataset not found: {DATA_PATH}")
@@ -594,7 +500,6 @@ def main():
         print(f"\n[INFO] Trained model found: {MODEL_PATH}")
         print("       Delete .pkl to retrain from scratch.")
 
-    # ── Inference ─────────────────────────────────────────────────────────────
     pipeline      = joblib.load(MODEL_PATH)
     feature_names = json.loads(FEATURES_PATH.read_text())
 
@@ -611,7 +516,6 @@ def main():
     else:
         print("\n[INFO] No APK path given. Training complete.")
         print("  Usage:  python apk_ml_model/scripts/model2_drebin_validator.py path/to/app.apk")
-
 
 if __name__ == "__main__":
     main()

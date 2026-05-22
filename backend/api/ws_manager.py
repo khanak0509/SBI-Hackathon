@@ -6,7 +6,6 @@ from typing import Any
 
 from fastapi import WebSocket
 
-
 class ConnectionManager:
     def __init__(self) -> None:
         self._clients: set[WebSocket] = set()
@@ -31,6 +30,5 @@ class ConnectionManager:
                     dead.append(ws)
             for ws in dead:
                 self._clients.discard(ws)
-
 
 manager = ConnectionManager()

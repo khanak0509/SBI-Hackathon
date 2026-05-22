@@ -42,35 +42,29 @@ class _InterceptorTestState extends State<InterceptorTest> {
     _startListening();
   }
 
-  
-  
   void _startListening() async {
-    // 1. Check and request Notification Access
+
     bool isGranted = await NotificationListenerService.isPermissionGranted();
     if (!isGranted) {
       debugPrint("Requesting Notification Access...");
       await NotificationListenerService.requestPermission();
     }
 
-    // 2. Listen to the stream of notifications
     _subscription = NotificationListenerService.notificationsStream.listen((event) async {
-      // Ignore empty system noise
+
       if (event.content == null || event.content!.isEmpty) return;
 
-      // Print to Mac terminal
       debugPrint("----- NEW MESSAGE CAUGHT -----");
       debugPrint("App Package: ${event.packageName}");
       debugPrint("Sender: ${event.title}");
       debugPrint("Message: ${event.content}");
 
-      // Send to backend and wait for response
       final backendReply = await sendNotification(
         event.title ?? "Unknown Sender",
         event.content ?? "",
         event.packageName ?? "",
       );
 
-      // Update the phone screen UI with both notification and backend reply
       setState(() {
         _messages.insert(
           0,
@@ -78,12 +72,10 @@ class _InterceptorTestState extends State<InterceptorTest> {
             event: event,
             backendReply: backendReply,
           ),
-        ); // Add new messages to the top
+        ); 
       });
     });
   }
-
-
 
 Future<String?> sendNotification(
   String sender,

@@ -9,14 +9,12 @@ class NotificationService {
       android: AndroidInitializationSettings('@mipmap/ic_launcher'),
     );
     await _plugin.initialize(settings);
-    
-    // Request permission on Android 13+
+
     _plugin
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>()
         ?.requestNotificationsPermission();
   }
-
 
   static Future<void> showThreatAlert(String title, String body) async {
     final details = NotificationDetails(

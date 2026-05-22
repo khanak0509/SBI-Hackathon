@@ -23,7 +23,7 @@ export default function ThreatFeedCard({ threat, selected, onClick }) {
         transition: 'background 0.15s',
       }}
     >
-      {/* Row 1: verdict + time */}
+      {}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div
@@ -44,7 +44,7 @@ export default function ThreatFeedCard({ threat, selected, onClick }) {
         </span>
       </div>
 
-      {/* Row 2: package / domain */}
+      {}
       <div
         style={{
           fontSize: 14,
@@ -60,7 +60,7 @@ export default function ThreatFeedCard({ threat, selected, onClick }) {
         {sub}
       </div>
 
-      {/* Row 3: location + confidence */}
+      {}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ fontSize: 12, color: 'var(--t3)' }}>{loc || '—'}</span>
         <span

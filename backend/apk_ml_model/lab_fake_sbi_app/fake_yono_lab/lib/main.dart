@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Local security-lab APK only — not a real bank app. Package id is SBI-shaped
-/// on purpose so KAVACH / Drebin-style scanners can be exercised offline.
 void main() {
   runApp(const LabApp());
 }

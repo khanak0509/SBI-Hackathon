@@ -11,7 +11,7 @@ class K {
   static const Color border = Color(0xFF252840);
   static const Color textPrimary = Color(0xFFE8EAF6);
   static const Color textSecondary = Color(0xFF7986CB);
-  static const Color textMuted = Color(0xFF8895BB);  // was 0xFF4A5073 — too dark, failed contrast
+  static const Color textMuted = Color(0xFF8895BB);  
   static const Color success = Color(0xFF00C853);
   static const Color danger = Color(0xFFE53935);
   static const Color warning = Color(0xFFFFA000);

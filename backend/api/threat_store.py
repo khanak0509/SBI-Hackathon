@@ -7,10 +7,8 @@ from typing import Any
 
 IST = timezone(timedelta(hours=5, minutes=30))
 
-
 def _now_iso() -> str:
     return datetime.now(IST).isoformat()
-
 
 class ThreatStore:
     def __init__(self, max_items: int = 8000) -> None:
@@ -93,6 +91,5 @@ class ThreatStore:
             if body.get("cybercrime"):
                 t["reported_cybercrime"] = True
             return dict(t)
-
 
 store = ThreatStore()

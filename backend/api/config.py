@@ -5,7 +5,6 @@ from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="KAVACH_", extra="ignore")
 
@@ -19,11 +18,9 @@ class Settings(BaseSettings):
     apk_malware_high: float = 0.45
     apk_malware_review: float = 0.28
 
-
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
-
 
 def cors_origins_list() -> list[str]:
     raw = get_settings().cors_origins

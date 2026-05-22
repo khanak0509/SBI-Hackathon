@@ -24,7 +24,6 @@ export const CHANNEL = {
   sms: '📨 SMS Link',
 }
 
-/** City / district + state for map HUD and feed */
 export function threatPlaceLabel(t) {
   const city = t.device_city || t.device_district
   const state = t.device_state
