@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
 import '../constants.dart';
 import '../services/kavach_service.dart';
-
+import '../services/location_service.dart';
 import '../services/native_bridge.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -19,7 +21,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
-  bool _notificationAccessGranted = true; 
+  bool _notificationAccessGranted = true;
+  bool _locationAccessGranted = true;
 
   @override
   void initState() {
@@ -27,6 +30,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkNotificationAccess();
+      _checkLocationAccess();
     });
   }
 
@@ -40,7 +44,92 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _checkNotificationAccess();
+      context.read<KavachService>().retryLocationAfterSettings();
+      _checkLocationAccess();
     }
+  }
+
+  Future<void> _checkLocationAccess() async {
+    final access = await ensureLocationAccess(request: false);
+    if (!mounted) return;
+    setState(() => _locationAccessGranted = access.granted);
+    if (!access.granted) {
+      _showLocationBottomSheet(access);
+    }
+  }
+
+  void _showLocationBottomSheet(LocationAccess access) {
+    if (ModalRoute.of(context)?.isCurrent != true) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: K.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: EdgeInsets.fromLTRB(24, 32, 24, MediaQuery.of(ctx).padding.bottom + 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Icon(Icons.location_on_outlined, size: 48, color: K.accent),
+              const SizedBox(height: 16),
+              Text(
+                access.serviceEnabled ? 'Location access needed' : 'Turn on GPS',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.rajdhani(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: K.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                access.serviceEnabled
+                    ? 'KAVACH uses your live location so threats appear on the FraudOps map with the correct city and state.'
+                    : 'Enable location services on your device, then allow KAVACH to use your location.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.nunitoSans(
+                  fontSize: 14,
+                  color: K.textSecondary,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: K.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                onPressed: () async {
+                  if (!access.serviceEnabled) {
+                    await Geolocator.openLocationSettings();
+                  } else if (access.permanentlyDenied) {
+                    await openAppSettings();
+                  } else {
+                    await ensureLocationAccess(request: true);
+                  }
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  if (mounted) {
+                    await context.read<KavachService>().retryLocationAfterSettings();
+                    await _checkLocationAccess();
+                  }
+                },
+                child: Text(
+                  'ENABLE LOCATION',
+                  style: GoogleFonts.rajdhani(fontSize: 18, fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _checkNotificationAccess() async {
@@ -198,6 +287,63 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               onPressed: () => NativeBridge.openNotificationSettings(),
                               style: TextButton.styleFrom(
                                 foregroundColor: Colors.orange,
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              child: const Text('ENABLE'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  if (!_locationAccessGranted)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12, left: 20, right: 20),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0D1A2A),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF1E3A5F)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.location_off_outlined, color: K.info, size: 24),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Live location off',
+                                    style: GoogleFonts.rajdhani(
+                                      fontWeight: FontWeight.w700,
+                                      color: K.info,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Enable GPS so the dashboard map shows your real city',
+                                    style: GoogleFonts.nunitoSans(
+                                      fontSize: 11,
+                                      color: K.textMuted,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () async {
+                                final access = await ensureLocationAccess(request: true);
+                                if (!access.granted && mounted) {
+                                  _showLocationBottomSheet(access);
+                                } else if (mounted) {
+                                  await context.read<KavachService>().retryLocationAfterSettings();
+                                  await _checkLocationAccess();
+                                }
+                              },
+                              style: TextButton.styleFrom(
+                                foregroundColor: K.info,
                                 padding: const EdgeInsets.symmetric(horizontal: 12),
                                 minimumSize: Size.zero,
                                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,

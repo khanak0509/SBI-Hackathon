@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 
 import 'backend_client.dart';
 import 'location_service.dart';
@@ -20,6 +22,8 @@ class KavachService extends ChangeNotifier {
   Map<String, dynamic>? lastUrlResult;
   Map<String, dynamic>? lastApkResult;
   Map<String, dynamic>? deviceLocationFields;
+  LocationAccess? locationAccess;
+  StreamSubscription<Position>? _liveLocationSub;
   Map<String, dynamic>? activeThreat;
   String? _lastReportedPackage;
   DateTime? _lastReportedTime;
@@ -39,7 +43,7 @@ class KavachService extends ChangeNotifier {
     isWatchActive = true;
     notifyListeners();
 
-    await refreshDeviceLocation();
+    await _initLocation();
 
     NativeBridge.packageThreatStream.listen((event) async {
       debugPrint("KAVACH_DEBUG: Received package threat stream event! $event");
@@ -123,24 +127,64 @@ class KavachService extends ChangeNotifier {
     }
   }
 
+  Future<void> _initLocation() async {
+    locationAccess = await ensureLocationAccess(request: true);
+    if (!locationAccess!.granted) {
+      debugPrint('KAVACH_DEBUG: Location not granted (${locationAccess!.permanentlyDenied})');
+      notifyListeners();
+      return;
+    }
+    await refreshDeviceLocation();
+    _liveLocationSub?.cancel();
+    _liveLocationSub = watchDeviceLocation((snap) {
+      deviceLocationFields = snap.toScanFields();
+      debugPrint(
+        'KAVACH_DEBUG: Live GPS ${snap.lat.toStringAsFixed(5)}, ${snap.lng.toStringAsFixed(5)} '
+        '${snap.city ?? ""}',
+      );
+      notifyListeners();
+    });
+  }
+
+  /// Call after user returns from system settings to grant location.
+  Future<void> retryLocationAfterSettings() async {
+    await _initLocation();
+  }
+
   Future<void> refreshDeviceLocation() async {
     try {
-      final snap = await captureDeviceLocation();
+      final snap = await captureDeviceLocation(requestPermission: false);
       if (snap != null) {
         deviceLocationFields = snap.toScanFields();
-        debugPrint("KAVACH_DEBUG: Location updated: ${deviceLocationFields!['device_city']}");
+        debugPrint(
+          'KAVACH_DEBUG: Location updated: ${deviceLocationFields!['device_lat']}, '
+          '${deviceLocationFields!['device_city']}',
+        );
       }
     } catch (e) {
-      debugPrint("KAVACH_DEBUG: Failed to refresh location: $e");
+      debugPrint('KAVACH_DEBUG: Failed to refresh location: $e');
     }
     notifyListeners();
   }
 
+  @override
+  void dispose() {
+    _liveLocationSub?.cancel();
+    super.dispose();
+  }
+
   Future<Map<String, dynamic>?> _deviceMetaForScan() async {
+    if (locationAccess?.granted != true) {
+      locationAccess = await ensureLocationAccess(request: true);
+    }
     try {
-      final snap = await captureDeviceLocation().timeout(const Duration(seconds: 14));
+      final snap = await captureDeviceLocation(requestPermission: true)
+          .timeout(const Duration(seconds: 18));
       if (snap != null) deviceLocationFields = snap.toScanFields();
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('KAVACH_DEBUG: scan location timeout/error: $e');
+      await refreshDeviceLocation();
+    }
     notifyListeners();
     return deviceLocationFields;
   }
