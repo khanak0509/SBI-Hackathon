@@ -1,0 +1,31 @@
+# OS / editor
+.DS_Store
+**/.DS_Store
+
+# Python
+__pycache__/
+**/__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# ML artifacts & datasets (keep locally; do not publish)
+backend/**/artifacts/
+backend/url_ml_model/artifacts/
+*.pkl
+*.joblib
+*.h5
+*.pt
+backend/backend.log
+backend/url_ml_model/data/phishing_site_urls.csv
+backend/apk_ml_model/data/*.csv
+
+# Node / frontend build
+dashboard/node_modules/
+dashboard/dist/
+frontend/kavach_app/build/
+frontend/kavach_app/.dart_tool/
+
+# Local docs (not for GitHub)
+KAVACH_FULL_PROJECT_GUIDE.md
+KAVACH_PROJECT_EXPLANATION.md
